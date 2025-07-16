@@ -37,6 +37,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "jsEngine": "hermes",
+    "android": {
+      "jsEngine": "jsc"
     }
   }
 }
