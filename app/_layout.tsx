@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, SafeAreaView } from 'react-native';
+import { StyleSheet, View, SafeAreaView, TouchableOpacity } from 'react-native';
 import Dashboard from '@/components/Dashboard';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
@@ -17,16 +17,20 @@ import LoadingScreen from '@/components/LoadingScreen';
 import AuthScreen from '@/components/AuthScreen';
 import SettingsScreen from '@/components/SettingsScreen';
 import NotFoundScreen from './+not-found';
+import GiveTakeScreen from '@/components/GiveTakeScreen';
+import FloatingGiveTakeButton from '@/components/FloatingGiveTakeButton';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function App() {
   
   const { user, loading: authLoading } = useAuth();  
   const { accounts, updateAccountBalance } = useAccounts();
-  const { transactions, addTransaction: addTransactionToDb } = useTransactions();
+   const { transactions, addTransaction: addTransactionToDb, updateTransaction, deleteTransaction } = useTransactions();
   const { budgetCategories, updateBudgetCategorySpent } = useBudgetCategories();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showTransactionForm, setShowTransactionForm] = useState(false);
+    const [showGiveTakeScreen, setShowGiveTakeScreen] = useState(false);
 
   // Show loading screen while authenticating
   if (authLoading) {
@@ -37,10 +41,6 @@ export default function App() {
   if (!user) {
     return <AuthScreen />;
   }
-
-  console.log(accounts);
-  
-
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     // Add transaction to database
@@ -65,22 +65,36 @@ export default function App() {
     // Close the form after successful submission
     setShowTransactionForm(false);
   };
+  const handleUpdateTransaction = async (transactionId: string, updates: Partial<Omit<Transaction, 'id'>>) => {
+    const { error } = await updateTransaction(transactionId, updates);
+    return { error };
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    const { error } = await deleteTransaction(transactionId);
+    return { error };
+  };
+
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <Dashboard
+          <Dashboard 
             transactions={transactions}
             accounts={accounts}
             budgetCategories={budgetCategories}
+            onUpdateTransaction={handleUpdateTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         );
       case 'transactions':
         return (
-          <TransactionList
+          <TransactionList 
             transactions={transactions}
             accounts={accounts}
+            onUpdateTransaction={handleUpdateTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         );
       case 'budget':
@@ -97,12 +111,33 @@ export default function App() {
             onUpdateBalance={updateAccountBalance}
           />
         );
-       case 'settings':
+      case 'settings':
         return <SettingsScreen />;
+      case 'give-take':
+        return <GiveTakeScreen />;
       default:
         return <NotFoundScreen/>;
     }
   };
+
+  // If Give/Take screen is active, show it instead of the main content
+  if (showGiveTakeScreen) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={styles.giveTakeHeader}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => setShowGiveTakeScreen(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color="#1E293B" />
+          </TouchableOpacity>
+        </View>
+        <GiveTakeScreen />
+      </SafeAreaView>
+    );
+  }
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -112,6 +147,8 @@ export default function App() {
       <View style={styles.content}>
         {renderContent()}
       </View>
+        {/* Floating Give/Take Button */}
+      <FloatingGiveTakeButton onPress={() => setShowGiveTakeScreen(true)} />
       {showTransactionForm && (
         <TransactionForm
           accounts={accounts}
@@ -123,6 +160,7 @@ export default function App() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -130,5 +168,20 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  giveTakeHeader: {
+    backgroundColor: 'white',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -17,11 +17,13 @@ import { supabase } from '@/lib/supabase';
 
 const SettingsScreen: React.FC = () => {
   const { user, signOut } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({
     full_name: '',
     email: user?.email || '',
   });
+console.log(user?.email);
 
   useEffect(() => {
     if (user) {
@@ -234,7 +236,7 @@ const SettingsScreen: React.FC = () => {
                 <Ionicons name="mail" size={20} color="#64748B" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  value={profile.email}
+                  value={user?.email}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, email: text }))}
                   placeholder="Enter your email"
                   keyboardType="email-address"

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Transaction } from '@/types';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from './useAuth';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,6 +85,71 @@ export function useTransactions() {
     }
   };
 
+  const updateTransaction = async (transactionId: string, updates: Partial<Omit<Transaction, 'id'>>) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    try {
+      const updateData: any = {};
+      
+      if (updates.amount !== undefined) updateData.amount = updates.amount;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.category !== undefined) updateData.category = updates.category;
+      if (updates.type !== undefined) updateData.type = updates.type;
+      if (updates.accountId !== undefined) updateData.account_id = updates.accountId;
+      if (updates.date !== undefined) updateData.date = updates.date.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .update(updateData)
+        .eq('id', transactionId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedTransaction: Transaction = {
+        id: data.id,
+        amount: Number(data.amount),
+        description: data.description,
+        category: data.category,
+        date: new Date(data.date),
+        type: data.type as 'income' | 'expense',
+        accountId: data.account_id,
+      };
+
+      setTransactions(prev => prev.map(t => 
+        t.id === transactionId ? updatedTransaction : t
+      ));
+
+      return { data: updatedTransaction, error: null };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update transaction';
+      setError(errorMessage);
+      return { error: errorMessage };
+    }
+  };
+
+  const deleteTransaction = async (transactionId: string) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.filter(t => t.id !== transactionId));
+      return { error: null };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete transaction';
+      setError(errorMessage);
+      return { error: errorMessage };
+    }
+  };
   useEffect(() => {
     fetchTransactions();
   }, [user]);
@@ -95,5 +160,7 @@ export function useTransactions() {
     error,
     fetchTransactions,
     addTransaction,
+    updateTransaction,
+    deleteTransaction,
   };
 }

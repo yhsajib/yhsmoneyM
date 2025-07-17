@@ -4,7 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Account } from '@/types';
-import AccountBalanceModal from '@/components/AccountBalanceModal';
+import AccountBalanceModal from '@/components/modal/AccountBalanceModal';
 
 interface AccountCardsProps {
   accounts: Account[];

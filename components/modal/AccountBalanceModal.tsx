@@ -30,7 +30,7 @@ const AccountBalanceModal: React.FC<AccountBalanceModalProps> = ({
 
   const handleUpdate = async () => {
     const newBalance = parseFloat(balance);
-    
+
     if (isNaN(newBalance)) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -97,7 +97,7 @@ const AccountBalanceModal: React.FC<AccountBalanceModalProps> = ({
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity onPress={handleUpdate} disabled={loading}>
                 <LinearGradient
                   colors={['#10B981', '#059669']}

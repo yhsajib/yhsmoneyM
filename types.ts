@@ -23,3 +23,13 @@ export interface BudgetCategory {
   spent: number;
   color: string;
 }
+
+export interface GiveTake {
+  id: string;
+  name: string;
+  amount: number;
+  date: Date;
+  type: 'give' | 'take';
+  status: 'pending' | 'settled';
+  description: string;
+}

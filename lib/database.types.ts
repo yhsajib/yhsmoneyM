@@ -111,6 +111,44 @@ export interface Database {
           updated_at?: string
         }
       }
+      give_take: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          amount: number
+          date: string
+          type: 'give' | 'take'
+          status: 'pending' | 'settled'
+          description: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          amount: number
+          date?: string
+          type: 'give' | 'take'
+          status?: 'pending' | 'settled'
+          description?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          amount?: number
+          date?: string
+          type?: 'give' | 'take'
+          status?: 'pending' | 'settled'
+          description?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

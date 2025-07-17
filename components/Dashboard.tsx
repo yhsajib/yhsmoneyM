@@ -1,16 +1,27 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Transaction, Account, BudgetCategory } from '@/types';
+import TransactionEditModal from '@/components/modal/TransactionEditModal';
 
 interface DashboardProps {
   transactions: Transaction[];
   accounts: Account[];
   budgetCategories: BudgetCategory[];
+  onUpdateTransaction: (transactionId: string, updates: Partial<Omit<Transaction, 'id'>>) => Promise<{ error: string | null }>;
+  onDeleteTransaction: (transactionId: string) => Promise<{ error: string | null }>;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ transactions, accounts, budgetCategories }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  transactions, 
+  accounts, 
+  budgetCategories, 
+  onUpdateTransaction, 
+  onDeleteTransaction 
+}) => {
+  const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
+
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const thisMonthTransactions = transactions.filter(t => {
     const transactionDate = new Date(t.date);
@@ -28,6 +39,28 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, accounts, budgetCat
 
   const totalBudgeted = budgetCategories.reduce((sum, cat) => sum + cat.budgeted, 0);
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    Alert.alert(
+      'Delete Transaction',
+      `Are you sure you want to delete "${transaction.description}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await onDeleteTransaction(transaction.id);
+            if (error) {
+              Alert.alert('Error', error);
+            } else {
+              Alert.alert('Success', 'Transaction deleted successfully!');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -123,6 +156,20 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, accounts, budgetCat
                 <Text style={styles.transactionDate}>
                   {new Date(transaction.date).toLocaleDateString()}
                 </Text>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setEditingTransaction(transaction)}
+                  >
+                    <Ionicons name="pencil" size={12} color="#3B82F6" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteTransaction(transaction)}
+                  >
+                    <Ionicons name="trash" size={12} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))}
@@ -163,6 +210,17 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, accounts, budgetCat
           })}
         </View>
       </View>
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <TransactionEditModal
+          transaction={editingTransaction}
+          accounts={accounts}
+          visible={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onUpdate={onUpdateTransaction}
+        />
+      )}
     </ScrollView>
   );
 };
@@ -267,6 +325,7 @@ const styles = StyleSheet.create({
   },
   transactionRight: {
     alignItems: 'flex-end',
+    gap: 4,
   },
   transactionAmount: {
     fontSize: 14,
@@ -275,6 +334,26 @@ const styles = StyleSheet.create({
   transactionDate: {
     fontSize: 12,
     color: '#64748B',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  editButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EBF4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   budgetList: {
     gap: 16,

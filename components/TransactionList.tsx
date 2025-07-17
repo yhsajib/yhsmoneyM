@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Transaction, Account } from '@/types';
+import { Transaction, Account } from '../types';
+import TransactionEditModal from '@/components/modal/TransactionEditModal';
 
 interface TransactionListProps {
   transactions: Transaction[];
   accounts: Account[];
+  onUpdateTransaction: (transactionId: string, updates: Partial<Omit<Transaction, 'id'>>) => Promise<{ error: string | null }>;
+  onDeleteTransaction: (transactionId: string) => Promise<{ error: string | null }>;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, accounts }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ 
+  transactions, 
+  accounts, 
+  onUpdateTransaction, 
+  onDeleteTransaction 
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,6 +38,28 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
 
   const getAccountName = (accountId: string) => {
     return accounts.find(account => account.id === accountId)?.name || 'Unknown Account';
+  };
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    Alert.alert(
+      'Delete Transaction',
+      `Are you sure you want to delete "${transaction.description}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await onDeleteTransaction(transaction.id);
+            if (error) {
+              Alert.alert('Error', error);
+            } else {
+              Alert.alert('Success', 'Transaction deleted successfully!');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const FilterButton = ({ type, label }: { type: 'all' | 'income' | 'expense'; label: string }) => (
@@ -108,16 +139,43 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, account
                   </View>
                 </View>
               </View>
-              <Text style={[
-                styles.transactionAmount,
-                { color: transaction.type === 'income' ? '#10B981' : '#EF4444' }
-              ]}>
-                {transaction.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
-              </Text>
+              <View style={styles.transactionRight}>
+                <Text style={[
+                  styles.transactionAmount,
+                  { color: transaction.type === 'income' ? '#10B981' : '#EF4444' }
+                ]}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
+                </Text>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setEditingTransaction(transaction)}
+                  >
+                    <Ionicons name="pencil" size={16} color="#3B82F6" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteTransaction(transaction)}
+                  >
+                    <Ionicons name="trash" size={16} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           ))
         )}
       </ScrollView>
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <TransactionEditModal
+          transaction={editingTransaction}
+          accounts={accounts}
+          visible={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onUpdate={onUpdateTransaction}
+        />
+      )}
     </View>
   );
 };
@@ -249,9 +307,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
   },
+  transactionRight: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
   transactionAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#EBF4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

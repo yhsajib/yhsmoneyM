@@ -12,11 +12,8 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      "jsEngine": "jsc",
+      "package": "com.yeamindesvert.nomoneynohoney"
     },
     "web": {
       "bundler": "metro",
@@ -39,8 +36,11 @@
       "typedRoutes": true
     },
     "jsEngine": "hermes",
-    "android": {
-      "jsEngine": "jsc"
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2b1f63f1-3e91-471f-b702-efe3465be302"
+      }
     }
   }
 }

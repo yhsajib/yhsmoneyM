@@ -11,7 +11,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'analytics' as const },
     { id: 'transactions', label: 'Transactions', icon: 'card' as const },
-    { id: 'budget', label: 'Budget', icon: 'target' as const },
     { id: 'accounts', label: 'Accounts', icon: 'wallet' as const },
     { id: 'settings', label: 'Settings', icon: 'settings' as const }
   ];

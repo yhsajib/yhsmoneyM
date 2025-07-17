@@ -13,30 +13,37 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Account, Transaction } from '@/types';
 import { useCategories } from '@/hooks/useCategories';
-import CategoryManager from '@/components/CategoryManager';
 
-interface TransactionFormProps {
+interface TransactionEditModalProps {
+  transaction: Transaction;
   accounts: Account[];
-  onSubmit: (transaction: Omit<Transaction, 'id'>) => void;
+  visible: boolean;
   onClose: () => void;
+  onUpdate: (transactionId: string, updates: Partial<Omit<Transaction, 'id'>>) => Promise<{ error: string | null }>;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, onSubmit, onClose }) => {
+const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
+  transaction,
+  accounts,
+  visible,
+  onClose,
+  onUpdate,
+}) => {
   const { getCategoriesByType } = useCategories();
   const [formData, setFormData] = useState({
-    amount: '',
-    description: '',
-    category: '',
-    date: new Date().toISOString().split('T')[0],
-    type: 'expense' as 'income' | 'expense',
-    accountId: accounts[0]?.id || ''
+    amount: Math.abs(transaction.amount).toString(),
+    description: transaction.description,
+    category: transaction.category,
+    date: transaction.date.toISOString().split('T')[0],
+    type: transaction.type,
+    accountId: transaction.accountId
   });
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const categories = getCategoriesByType(formData.type);
 
-  const handleSubmit = () => {
-    if (!formData.amount || !formData.description || !formData.category) { 
+  const handleSubmit = async () => {
+    if (!formData.amount || !formData.description || !formData.category) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -48,12 +55,26 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, onSubmit, o
     }
 
     const adjustedAmount = formData.type === 'expense' ? -Math.abs(amount) : Math.abs(amount);
-    onSubmit({
-      ...formData,
-      amount: adjustedAmount,
-      date: new Date(formData.date)
-    });
 
+    setLoading(true);
+    try {
+      const { error } = await onUpdate(transaction.id, {
+        ...formData,
+        amount: adjustedAmount,
+        date: new Date(formData.date)
+      });
+
+      if (error) {
+        Alert.alert('Error', error);
+      } else {
+        Alert.alert('Success', 'Transaction updated successfully!');
+        onClose();
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update transaction');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const TypeButton = ({ type, label }: { type: 'income' | 'expense'; label: string }) => (
@@ -74,10 +95,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, onSubmit, o
   );
 
   return (
-    <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Add Transaction</Text>
+          <Text style={styles.title}>Edit Transaction</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#64748B" />
           </TouchableOpacity>
@@ -123,16 +144,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, onSubmit, o
 
           {/* Category */}
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Category</Text>
-              <TouchableOpacity
-                style={styles.manageCategoriesButton}
-                onPress={() => setShowCategoryManager(true)}
-              >
-                <Ionicons name="settings" size={16} color="#64748B" />
-                <Text style={styles.manageCategoriesText}>Manage</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.label}>Category</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
               {categories.map(category => (
                 <TouchableOpacity
@@ -195,22 +207,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, onSubmit, o
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity onPress={handleSubmit}>
+          <TouchableOpacity onPress={handleSubmit} disabled={loading}>
             <LinearGradient
               colors={['#10B981', '#059669']}
-              style={styles.submitButton}
+              style={[styles.submitButton, loading && styles.disabledButton]}
             >
-              <Text style={styles.submitButtonText}>Add Transaction</Text>
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Updating...' : 'Update Transaction'}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Category Manager Modal */}
-      <CategoryManager
-        visible={showCategoryManager}
-        onClose={() => setShowCategoryManager(false)}
-      />
     </Modal>
   );
 };
@@ -284,25 +292,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 8,
   },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  manageCategoriesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 6,
-    gap: 4,
-  },
-  manageCategoriesText: {
-    fontSize: 12,
-    color: '#64748B',
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,6 +344,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
   submitButtonText: {
     color: 'white',
     fontSize: 16,
@@ -362,4 +354,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TransactionForm;
+export default TransactionEditModal;
