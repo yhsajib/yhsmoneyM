@@ -1,17 +1,17 @@
+import { useAuth } from '@/hooks/useAuth'; // Make sure this is device-compatible
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/hooks/useAuth';
 
 const AuthScreen: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -29,16 +29,19 @@ const AuthScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      const { error } = isSignUp 
+      const { error } = isSignUp
         ? await signUp(email, password, fullName)
         : await signIn(email, password);
 
       if (error) {
         Alert.alert('Error', error.message);
       } else if (isSignUp) {
-        Alert.alert('Success', 'Account created! Please check your email to verify your account.');
-      } else if (isSignUp) {
-        Alert.alert('Success', 'Account created! Please check your email to verify your account.');
+        Alert.alert(
+          'Success',
+          'Account created! Please check your email to verify your account.'
+        );
+      } else {
+        Alert.alert('Success', 'Signed in successfully.');
       }
     } catch (err) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -48,8 +51,8 @@ const AuthScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
@@ -69,23 +72,6 @@ const AuthScreen: React.FC = () => {
 
         {/* Form */}
         <View style={styles.form}>
-          {isSignUp && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="person" size={20} color="#64748B" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Enter your full name"
-                  autoCapitalize="words"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-            </View>
-          )}
-
           {isSignUp && (
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Full Name</Text>
@@ -140,20 +126,19 @@ const AuthScreen: React.FC = () => {
               style={[styles.authButton, loading && styles.disabledButton]}
             >
               <Text style={styles.authButtonText}>
-                {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+                {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.switchButton}
             onPress={() => setIsSignUp(!isSignUp)}
           >
             <Text style={styles.switchButtonText}>
-              {isSignUp 
-                ? 'Already have an account? Sign In' 
-                : "Don't have an account? Sign Up"
-              }
+              {isSignUp
+                ? 'Already have an account? Sign In'
+                : "Don't have an account? Sign Up"}
             </Text>
           </TouchableOpacity>
         </View>

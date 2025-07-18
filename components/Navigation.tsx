@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface NavigationProps {
   activeTab: string;
@@ -25,6 +25,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
             activeTab === tab.id && styles.activeTab
           ]}
           onPress={() => onTabChange(tab.id)}
+          accessibilityRole="button"
+          accessibilityLabel={tab.label}
         >
           <Ionicons
             name={tab.icon}
